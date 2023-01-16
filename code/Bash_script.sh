@@ -58,6 +58,7 @@ hisat2 -x $index \
 -1 ${root}_R1_trimmed.fastq.gz \
 -2 ${root}_R2_trimmed.fastq.gz \
 | samtools view -bS - > hisat_bams/${root}.bam
+rm ${root}_R1_trimmed.fastq.gz ${root}_R2_trimmed.fastq.gz
 # Sort and index BAMs
 cd /mnt/d/Projects/OxyMeth/data/PRJEB33332/trimmed/hisat_bams
 samtools sort -m 2G -@ 8 -O BAM -o ${root}.sorted.bam ${root}.bam 
