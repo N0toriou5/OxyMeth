@@ -16,6 +16,7 @@ require("Rsubread")
 require("stringr")
 require("vulcan")
 require("xlsx")
+source("D:/Archive/textplot3.R")
 
 #### count reads
 bam.files <- list.files(path = "data/PRJEB33332/trimmed/hisat_bams", pattern = ".bam$", full.names = TRUE)
@@ -372,4 +373,62 @@ meth_DE <- deres
 load("results/002_deres.rda")
 oxy_DE <- deres
 
-###
+### scatterplot
+hiv_meth <- na.omit(meth_DE$HIV$Meth)
+hiv_oxy <- na.omit(oxy_DE$HIV$Meth)
+
+x <- setNames(hiv_meth$stat, rownames(hiv_meth))
+y <- setNames(hiv_oxy$stat, rownames(hiv_oxy))
+
+common <- intersect(names(x), names(y))
+x <- x[common]
+y <- y[common]
+sig1 <- rownames(hiv_meth[abs(hiv_meth$log2FoldChange) >= 0.5 & hiv_meth$padj <= 0.05, ])
+sig2 <- rownames(hiv_oxy[abs(hiv_oxy$log2FoldChange) >= 0.5 & hiv_oxy$padj <= 0.05, ])
+length(intersect(sig1,sig2))
+png("plots/000_DE_HIV_compare.png",w=2000,h=2000,res=300)
+plot(x,y,pch=20,col="grey",xlab="Meth vs. Naive (stat)",ylab="Oxy vs. Naive (stat)",main="HIV")
+pcc<-cor.test(x,y)
+mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
+lml<-lm(y~x)
+abline(lml,lwd=1)
+set.seed(1)
+points(x[sig1],y[sig1],col="red",pch=20)
+points(x[sig2],y[sig2],col="blue",pch=20)
+#textplot3(x[top],y[top],words=top,font=2,cex=1,show.lines=F,col="black")
+legend("bottomright",pch=20,legend=c(paste0("Significant in Meth: ",length(sig1)),
+                                     paste0("Significant in Oxy: ",length(sig2))),col=c("red","blue"),pt.cex=2)
+dev.off()
+
+# Meth vs. Oxy in WT
+load("results/001_deres.rda")
+meth_DE <- deres
+load("results/002_deres.rda")
+oxy_DE <- deres
+
+### scatterplot
+wt_meth <- na.omit(meth_DE$WT$Meth)
+wt_oxy <- na.omit(oxy_DE$WT$Meth)
+
+x <- setNames(wt_meth$stat, rownames(wt_meth))
+y <- setNames(wt_oxy$stat, rownames(wt_oxy))
+
+common <- intersect(names(x), names(y))
+x <- x[common]
+y <- y[common]
+sig1 <- rownames(wt_meth[abs(wt_meth$log2FoldChange) >= 0.5 & wt_meth$padj <= 0.05, ])
+sig2 <- rownames(wt_oxy[abs(wt_oxy$log2FoldChange) >= 0.5 & wt_oxy$padj <= 0.05, ])
+length(intersect(sig1,sig2))
+png("plots/000_DE_WT_compare.png",w=2000,h=2000,res=300)
+plot(x,y,pch=20,col="grey",xlab="Meth vs. Naive (stat)",ylab="Oxy vs. Naive (stat)",main="WT")
+pcc<-cor.test(x,y)
+mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
+lml<-lm(y~x)
+abline(lml,lwd=1)
+set.seed(1)
+points(x[sig1],y[sig1],col="red",pch=20)
+points(x[sig2],y[sig2],col="blue",pch=20)
+#textplot3(x[top],y[top],words=top,font=2,cex=1,show.lines=F,col="black")
+legend("bottomright",pch=20,legend=c(paste0("Significant in Meth: ",length(sig1)),
+                                     paste0("Significant in Oxy: ",length(sig2))),col=c("red","blue"),pt.cex=2)
+dev.off()
