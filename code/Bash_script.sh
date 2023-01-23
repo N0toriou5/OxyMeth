@@ -54,7 +54,7 @@ cd /mnt/d/Projects/OxyMeth/data/PRJEB33332/trimmed/
 root=`basename $fname _R1_trimmed.fastq.gz`
 echo "Doing $root"
 hisat2 -x $index \
--p 12 \
+-p 8 \
 -t \
 -1 ${root}_R1_trimmed.fastq.gz \
 -2 ${root}_R2_trimmed.fastq.gz \
@@ -75,7 +75,7 @@ mkdir rawcounts
 
 # new counts with hybrid genome
 gtf=/mnt/d/genomes/Rat/Rnor6_HIV/Rnor6_hybrid_fixed.gtf
-featureCounts -T 10 -p -s 2 -t gene -g gene_name -a $gtf -o rawcounts/featureCounts.txt *sorted.bam
+featureCounts -T 14 -p -s 2 -t gene -g gene_name -a $gtf -o rawcounts/featureCounts.txt *sorted.bam
 
 # Unique mapping rates: 68.4,69.4,69.3,70.0,69.0,69.0,68.9,69.1,69.4,70.3,69.1,69.5,68.7,69.9,70.3
 # mean 69.4
