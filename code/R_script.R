@@ -432,3 +432,228 @@ points(x[sig2],y[sig2],col="blue",pch=20)
 legend("bottomright",pch=20,legend=c(paste0("Significant in Meth: ",length(sig1)),
                                      paste0("Significant in Oxy: ",length(sig2))),col=c("red","blue"),pt.cex=2)
 dev.off()
+
+# GSEA compare
+
+#### Compare DE
+# Meth vs. Oxy in HIV
+load("results/001_GSEA_HIVm_HIV_Meth.rda")
+meth <- gseas[gseas$padj <= 0.05, ]
+load("results/001_GSEA_HIVm_HIV_Oxy.rda")
+oxy <- gseas[gseas$padj <= 0.05, ]
+
+### scatterplot
+
+x <- setNames(meth$NES, meth$pathway)
+y <- setNames(oxy$NES, oxy$pathway)
+
+common <- intersect(names(x), names(y))
+x <- x[common]
+y <- y[common]
+png("plots/000_DE_HIV_compare.png",w=2000,h=2000,res=300)
+plot(x,y,pch=20,col="grey",xlab="Meth vs. Naive (stat)",ylab="Oxy vs. Naive (stat)",main="HIV")
+pcc<-cor.test(x,y)
+mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
+lml<-lm(y~x)
+abline(lml,lwd=1)
+set.seed(1)
+points(x[names(x)],y[sig1],col="red",pch=20)
+points(x[sig2],y[sig2],col="blue",pch=20)
+#textplot3(x[top],y[top],words=top,font=2,cex=1,show.lines=F,col="black")
+legend("bottomright",pch=20,legend=c(paste0("Significant in Meth: ",length(sig1)),
+                                     paste0("Significant in Oxy: ",length(sig2))),col=c("red","blue"),pt.cex=2)
+dev.off()
+
+# Meth vs. Oxy in WT
+load("results/001_deres.rda")
+meth_DE <- deres
+load("results/002_deres.rda")
+oxy_DE <- deres
+
+### scatterplot
+wt_meth <- na.omit(meth_DE$WT$Meth)
+wt_oxy <- na.omit(oxy_DE$WT$Meth)
+
+x <- setNames(wt_meth$stat, rownames(wt_meth))
+y <- setNames(wt_oxy$stat, rownames(wt_oxy))
+
+common <- intersect(names(x), names(y))
+x <- x[common]
+y <- y[common]
+sig1 <- rownames(wt_meth[abs(wt_meth$log2FoldChange) >= 0.5 & wt_meth$padj <= 0.05, ])
+sig2 <- rownames(wt_oxy[abs(wt_oxy$log2FoldChange) >= 0.5 & wt_oxy$padj <= 0.05, ])
+length(intersect(sig1,sig2))
+png("plots/000_DE_WT_compare.png",w=2000,h=2000,res=300)
+plot(x,y,pch=20,col="grey",xlab="Meth vs. Naive (stat)",ylab="Oxy vs. Naive (stat)",main="WT")
+pcc<-cor.test(x,y)
+mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
+lml<-lm(y~x)
+abline(lml,lwd=1)
+set.seed(1)
+points(x[sig1],y[sig1],col="red",pch=20)
+points(x[sig2],y[sig2],col="blue",pch=20)
+#textplot3(x[top],y[top],words=top,font=2,cex=1,show.lines=F,col="black")
+legend("bottomright",pch=20,legend=c(paste0("Significant in Meth: ",length(sig1)),
+                                     paste0("Significant in Oxy: ",length(sig2))),col=c("red","blue"),pt.cex=2)
+dev.off()
+
+#### MRA
+load("D:/Datasets/Expression/Regulons/GTEx_MPFC_regulon2020.rda")
+regulon[[1]]
+
+limit <- 20 
+ntar <- sapply(regulon, function(x){
+  length(x$tfmode)
+})
+keep <- which(ntar >= limit)
+regulon <- regulon[keep]
+
+library(babelgene)
+gene_mapping <- orthologs(genes = names(regulon), species = "rat")
+regul <- Regulon_HumantoModelSym(regulon, species = "rat")
+
+#### Function to translate a human regulon to another specie
+Regulon_HumantoModelSym <- function(regulon, species = "mouse") {
+  gene_mapping <- orthologs(genes = names(regulon), species = species)
+  human_genes <- c(names(regulon))
+  member_names <- unique(intersect(names(regulon), gene_mapping$human_symbol))
+  index <- which(human_genes %in% member_names)
+  regulon <- regulon[index]
+  idx <- match(names(regulon), gene_mapping$human_symbol)
+  gene_mapping <- gene_mapping[idx,]
+  #gene_mapping <- gene_mapping[!duplicated(gene_mapping$symbol),]
+  member_names <- unique(intersect(names(regulon), gene_mapping$human_symbol))
+  index <- which(human_genes %in% member_names)
+
+  #### convert centroids
+  for (i in 1:nrow(gene_mapping)) {
+    human_gene <- gene_mapping[i,1]
+    rat_map <- gene_mapping[gene_mapping$human_symbol == human_gene,]
+    if (nrow(rat_map) >= 2) {
+      idx <- max(rat_map$support_n)
+      rat_gene <- rat_map[rat_map$support_n==idx, 5]
+      names(regulon)[i] <- rat_gene
+    } else {
+      rat_gene <- rat_map[rat_map$human_symbol == human_gene, 5]
+      names(regulon)[i] <- rat_gene
+    }
+  }
+
+  #### now for the target
+  for (i in 1:length(regulon)) {
+    nameVec <- names(regulon[[i]]$tfmode)
+    gene_mapping <- orthologs(genes = nameVec, species = species)
+    idx <- match(nameVec, gene_mapping$human_symbol)
+    gene_mapping <- gene_mapping[idx,]
+    names(regulon[[i]]$tfmode) <- gene_mapping$symbol
+    na.omit(names(regulon[[i]]$tfmode))
+    id <- which(is.na(names(regulon[[i]]$tfmode)))
+    regulon[[i]]$tfmode <- regulon[[i]]$tfmode[-id]
+    regulon[[i]]$likelihood <- regulon[[i]]$likelihood[-id]        
+  }
+  class(regulon)<-"regulon"
+  return(regulon)
+}
+
+#### MRA Meth
+load("results/000_expmat.rda")
+load("results/000_annotation_input.rda")
+# expmat <- expmat[rowVars(expmat)>=0.05,]
+# trt <- expmat[,rownames(annotation[annotation$Type=="HIV"&annotation$Treatment=="Meth",])]
+# ctr <- expmat[,rownames(annotation[annotation$Type=="HIV"&annotation$Treatment=="Naive",])]
+submat <- expmat[,rownames(annotation[annotation$Type=="HIV",])]
+submat <- submat[rowVars(submat)>=0.01,]
+trt <- submat[,rownames(annotation[annotation$Type=="HIV"&annotation$Treatment=="Meth",])]
+ctr <- submat[,rownames(annotation[annotation$Type=="HIV"&annotation$Treatment=="Naive",])]
+mr <- mra(trt, ctr, regulon = regul, minsize = 12, nperm = 1000, nthreads = 14)
+mraplot(mr, mrs = 20)
+
+### WT
+submat <- expmat[,rownames(annotation[annotation$Type=="WT",])]
+submat <- submat[rowVars(submat)>=0.01,]
+trt <- submat[,rownames(annotation[annotation$Type=="WT"&annotation$Treatment=="Meth",])]
+ctr <- submat[,rownames(annotation[annotation$Type=="WT"&annotation$Treatment=="Naive",])]
+mr2 <- mra(trt, ctr, regulon = regul, minsize = 12, nperm = 1000, nthreads = 14)
+mraplot(mr, mrs = 20)
+
+#### MRA Oxy
+load("results/001_expmat_Oxy.rda")
+load("results/001_annotation_Oxy.rda")
+submat <- expmat[,rownames(annotation[annotation$Type=="HIV",])]
+submat <- submat[rowVars(submat)>=0.01,]
+trt <- submat[,rownames(annotation[annotation$Type=="HIV"&annotation$Treatment=="Meth",])]
+ctr <- submat[,rownames(annotation[annotation$Type=="HIV"&annotation$Treatment=="Naive",])]
+mr3 <- mra(trt, ctr, regulon = regul, minsize = 12, nperm = 1000, nthreads = 14)
+mraplot(mr, mrs = 20)
+
+### Oxy
+submat <- expmat[,rownames(annotation[annotation$Type=="WT",])]
+submat <- submat[rowVars(submat)>=0.01,]
+trt <- submat[,rownames(annotation[annotation$Type=="WT"&annotation$Treatment=="Meth",])]
+ctr <- submat[,rownames(annotation[annotation$Type=="WT"&annotation$Treatment=="Naive",])]
+mr4 <- mra(trt, ctr, regulon = regul, minsize = 12, nperm = 1000, nthreads = 14)
+mraplot(mr, mrs = 20)
+
+#### compare HIV Meth vs. Oxy
+x <- setNames(mr$nes, names(mr$nes))
+y <- setNames(mr3$nes, names(mr3$nes))
+common <- intersect(names(x),names(y))
+x <- x[common]
+y <- y[common]
+
+#### Plotting
+png("plots/002_compareMRs_HIV.png", h = 2000, w = 2000, res = 300)
+plot(x,y,pch=20,col="grey",xlab="Meth vs. Naive (NES)",ylab="Oxy vs. Naive (NES)",main="HIV Master Regulators")
+# pcc<-cor.test(x,y)
+# mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
+# lml<-lm(y~x)
+
+abline(v = -1.96)
+abline(v = 1.96)
+abline(h = c(-1.96,1.96))
+dnx <- names(x[x<= -1.96])
+upy <- names(y[y>= 1.96])
+dny <- names(y[y<= -1.96])
+upx <- names(x[x>= 1.96])
+cand1 <- intersect(dnx,upy)
+cand2 <- intersect(dny, upx)
+candidates <- c(cand1, cand2)
+
+set.seed(1)
+points(x[candidates],y[candidates],col="orange",pch=20)
+textplot3(x[candidates],y[candidates],words=candidates,font=2,cex=1,show.lines=T,col="black", line.col="darkgrey")
+# legend("bottomright",pch=20,legend=c(paste0("Significant in Meth: ",length(sig1)),
+#                                      paste0("Significant in Oxy: ",length(sig2))),col=c("red","blue"),pt.cex=2)
+dev.off()
+
+#### compare WT Meth vs. Oxy
+x <- setNames(mr2$nes, names(mr2$nes))
+y <- setNames(mr4$nes, names(mr4$nes))
+common <- intersect(names(x),names(y))
+x <- x[common]
+y <- y[common]
+
+#### Plotting
+png("plots/002_compareMRs_WT.png", h = 2000, w = 2000, res = 300)
+plot(x,y,pch=20,col="grey",xlab="Meth vs. Naive (NES)",ylab="Oxy vs. Naive (NES)",main="WT Master Regulators")
+# pcc<-cor.test(x,y)
+# mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
+# lml<-lm(y~x)
+
+abline(v = -1.96)
+abline(v = 1.96)
+abline(h = c(-1.96,1.96))
+dnx <- names(x[x<= -1.96])
+upy <- names(y[y>= 1.96])
+dny <- names(y[y<= -1.96])
+upx <- names(x[x>= 1.96])
+cand1 <- intersect(dnx,upy)
+cand2 <- intersect(dny, upx)
+candidates <- c(cand1, cand2)
+
+set.seed(1)
+#points(x[candidates],y[candidates],col="orange",pch=20)
+#textplot3(x[candidates],y[candidates],words=candidates,font=2,cex=1,show.lines=T,col="black", line.col="darkgrey")
+# legend("bottomright",pch=20,legend=c(paste0("Significant in Meth: ",length(sig1)),
+#                                      paste0("Significant in Oxy: ",length(sig2))),col=c("red","blue"),pt.cex=2)
+dev.off()
