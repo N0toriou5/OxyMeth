@@ -665,5 +665,3 @@ set.seed(1)
 # legend("bottomright",pch=20,legend=c(paste0("Significant in Meth: ",length(sig1)),
 #                                      paste0("Significant in Oxy: ",length(sig2))),col=c("red","blue"),pt.cex=2)
 dev.off()
-
-mraplot(mr, mrs = candidates)
