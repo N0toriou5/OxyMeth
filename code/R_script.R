@@ -626,6 +626,14 @@ textplot3(x[candidates],y[candidates],words=candidates,font=2,cex=1,show.lines=T
 #                                      paste0("Significant in Oxy: ",length(sig2))),col=c("red","blue"),pt.cex=2)
 dev.off()
 
+#### MRA Plots
+par(mfrow = c(1, 2))
+png("plots/000_mraplot_Meth.png", h = 3000, w = 2500, res = 300)
+mraplot(mr, mrs = candidates, pthr = 0.05, title = "Meth vs. Naive (HIV)")
+dev.off()
+png("plots/000_mraplot_Oxy.png", h = 3000, w = 2500, res = 300)
+mraplot(mr3, mrs = candidates, pthr = 0.05, title = "Oxy vs. Naive (HIV)")
+dev.off()
 #### compare WT Meth vs. Oxy
 x <- setNames(mr2$nes, names(mr2$nes))
 y <- setNames(mr4$nes, names(mr4$nes))
@@ -657,3 +665,5 @@ set.seed(1)
 # legend("bottomright",pch=20,legend=c(paste0("Significant in Meth: ",length(sig1)),
 #                                      paste0("Significant in Oxy: ",length(sig2))),col=c("red","blue"),pt.cex=2)
 dev.off()
+
+mraplot(mr, mrs = candidates)
