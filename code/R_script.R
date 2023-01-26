@@ -363,8 +363,8 @@ set.seed(1)
 gseas <- fgseaMultilevel(pathways = mlist, stats = signature, eps = 0, minSize = 15,
                          maxSize = Inf, nproc = 14, nPermSimple = 10000)
 gseas <- gseas[order(gseas$pval),]
-save(gseas, file="results/001_GSEA_HIVm_HIV_Oxy.rda")
-write.xlsx2(gseas, file= "results/001_GSEA_HIVm_HIV_Oxy.xlsx", row.names = FALSE)
+save(gseas, file="results/001_GSEA_WTm_WT_Oxy.rda")
+write.xlsx2(gseas, file= "results/001_GSEA_WTm_WT_Oxy.xlsx", row.names = FALSE)
 
 #### Compare DE
 # Meth vs. Oxy in HIV
@@ -566,7 +566,7 @@ submat <- submat[rowVars(submat)>=0.01,]
 trt <- submat[,rownames(annotation[annotation$Type=="HIV"&annotation$Treatment=="Meth",])]
 ctr <- submat[,rownames(annotation[annotation$Type=="HIV"&annotation$Treatment=="Naive",])]
 mr <- mra(trt, ctr, regulon = regul, minsize = 12, nperm = 1000, nthreads = 14)
-mraplot(mr, mrs = 20)
+save(mr, file = "results/000_MRA_HIV_Meth.rda")
 
 ### WT
 submat <- expmat[,rownames(annotation[annotation$Type=="WT",])]
@@ -574,7 +574,7 @@ submat <- submat[rowVars(submat)>=0.01,]
 trt <- submat[,rownames(annotation[annotation$Type=="WT"&annotation$Treatment=="Meth",])]
 ctr <- submat[,rownames(annotation[annotation$Type=="WT"&annotation$Treatment=="Naive",])]
 mr2 <- mra(trt, ctr, regulon = regul, minsize = 12, nperm = 1000, nthreads = 14)
-mraplot(mr, mrs = 20)
+save(mr2, file = "results/000_MRA_WT_Meth.rda")
 
 #### MRA Oxy
 load("results/001_expmat_Oxy.rda")
@@ -584,7 +584,7 @@ submat <- submat[rowVars(submat)>=0.01,]
 trt <- submat[,rownames(annotation[annotation$Type=="HIV"&annotation$Treatment=="Meth",])]
 ctr <- submat[,rownames(annotation[annotation$Type=="HIV"&annotation$Treatment=="Naive",])]
 mr3 <- mra(trt, ctr, regulon = regul, minsize = 12, nperm = 1000, nthreads = 14)
-mraplot(mr, mrs = 20)
+save(mr3, file = "results/000_MRA_HIV_Oxy.rda")
 
 ### Oxy
 submat <- expmat[,rownames(annotation[annotation$Type=="WT",])]
@@ -592,7 +592,7 @@ submat <- submat[rowVars(submat)>=0.01,]
 trt <- submat[,rownames(annotation[annotation$Type=="WT"&annotation$Treatment=="Meth",])]
 ctr <- submat[,rownames(annotation[annotation$Type=="WT"&annotation$Treatment=="Naive",])]
 mr4 <- mra(trt, ctr, regulon = regul, minsize = 12, nperm = 1000, nthreads = 14)
-mraplot(mr, mrs = 20)
+save(mr4, file = "results/000_MRA_WT_Oxy.rda")
 
 #### compare HIV Meth vs. Oxy
 x <- setNames(mr$nes, names(mr$nes))
@@ -602,8 +602,9 @@ x <- x[common]
 y <- y[common]
 
 #### Plotting
-png("plots/002_compareMRs_HIV.png", h = 2000, w = 2000, res = 300)
-plot(x,y,pch=20,col="grey",xlab="Meth vs. Naive (NES)",ylab="Oxy vs. Naive (NES)",main="HIV Master Regulators")
+png("plots/002_compareMRs_HIV.png", h = 2500, w = 2500, res = 300)
+plot(x, y, pch = 20, col = "grey", xlab = "Meth vs. Naive (NES)", ylab = "Oxy vs. Naive (NES)",
+     main = "HIV Master Regulators", xlim=1.1*c(min(x),max(x)))
 # pcc<-cor.test(x,y)
 # mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
 # lml<-lm(y~x)
@@ -617,13 +618,34 @@ dny <- names(y[y<= -1.96])
 upx <- names(x[x>= 1.96])
 cand1 <- intersect(dnx,upy)
 cand2 <- intersect(dny, upx)
-candidates <- c(cand1, cand2)
+both <- c(cand1, cand2)
+sigX <- c(dnx,upx)
+sigY <- c(dny,upy)
 
+### Define exclusive MRs
+onlyX <- setdiff(sigX,sigY)
+onlyY <- setdiff(sigY, sigX)
+
+## Identify top 5 in Meth
+topX <- sort(abs(x), decreasing = T)
+topX <- topX[onlyX]
+topX <- names(sort(abs(topX), decreasing = T)[1:5])
+
+## Identify top 5 in Oxy
+topY <- sort(abs(y), decreasing = T)
+topY <- topY[onlyY]
+topY <- names(sort(abs(topY), decreasing = T)[1:5])
+
+labels <- c(topX, topY, both)
 set.seed(1)
-points(x[candidates],y[candidates],col="orange",pch=20)
-textplot3(x[candidates],y[candidates],words=candidates,font=2,cex=1,show.lines=T,col="black", line.col="darkgrey")
-# legend("bottomright",pch=20,legend=c(paste0("Significant in Meth: ",length(sig1)),
-#                                      paste0("Significant in Oxy: ",length(sig2))),col=c("red","blue"),pt.cex=2)
+points(x[both],y[both],col="orange",pch=17)
+points(x[topX], y[topX], col = "blue", pch = 17)
+points(x[topY], y[topY], col = "green", pch = 17)
+textplot3(x[labels],y[labels],words=labels,font=2,cex=1,show.lines=T,col="black", line.col="darkgrey")
+legend("topright", pch=17, legend = c(paste0("Significant in Meth: ",length(onlyX)),
+                                     paste0("Significant in Oxy: ", length(onlyY)),
+                                     paste0("Opposite significance: ", length(both))),
+       col = c("blue","green", "orange"),pt.cex=2)
 dev.off()
 
 #### MRA Plots
@@ -634,6 +656,7 @@ dev.off()
 png("plots/000_mraplot_Oxy.png", h = 3000, w = 2500, res = 300)
 mraplot(mr3, mrs = candidates, pthr = 0.05, title = "Oxy vs. Naive (HIV)")
 dev.off()
+
 #### compare WT Meth vs. Oxy
 x <- setNames(mr2$nes, names(mr2$nes))
 y <- setNames(mr4$nes, names(mr4$nes))
@@ -642,8 +665,9 @@ x <- x[common]
 y <- y[common]
 
 #### Plotting
-png("plots/002_compareMRs_WT.png", h = 2000, w = 2000, res = 300)
-plot(x,y,pch=20,col="grey",xlab="Meth vs. Naive (NES)",ylab="Oxy vs. Naive (NES)",main="WT Master Regulators")
+png("plots/002_compareMRs_WT.png", h = 2500, w = 2500, res = 300)
+plot(x, y, pch = 20, col = "grey", xlab = "Meth vs. Naive (NES)", ylab = "Oxy vs. Naive (NES)",
+     main = "WT Master Regulators", xlim=1.1*c(min(x),max(x)))
 # pcc<-cor.test(x,y)
 # mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
 # lml<-lm(y~x)
@@ -657,11 +681,160 @@ dny <- names(y[y<= -1.96])
 upx <- names(x[x>= 1.96])
 cand1 <- intersect(dnx,upy)
 cand2 <- intersect(dny, upx)
-candidates <- c(cand1, cand2)
+both <- c(cand1, cand2)
+sigX <- c(dnx,upx)
+sigY <- c(dny,upy)
 
+### Define exclusive MRs
+onlyX <- setdiff(sigX,sigY)
+onlyY <- setdiff(sigY, sigX)
+
+## Identify top 5 in Meth
+topX <- sort(abs(x), decreasing = T)
+topX <- topX[onlyX]
+topX <- names(sort(abs(topX), decreasing = T)[1:5])
+
+## Identify top 5 in Oxy
+topY <- sort(abs(y), decreasing = T)
+topY <- topY[onlyY]
+topY <- names(sort(abs(topY), decreasing = T)[1:5])
+
+labels <- c(topX, topY, both)
 set.seed(1)
-#points(x[candidates],y[candidates],col="orange",pch=20)
-#textplot3(x[candidates],y[candidates],words=candidates,font=2,cex=1,show.lines=T,col="black", line.col="darkgrey")
-# legend("bottomright",pch=20,legend=c(paste0("Significant in Meth: ",length(sig1)),
-#                                      paste0("Significant in Oxy: ",length(sig2))),col=c("red","blue"),pt.cex=2)
+#points(x[both],y[both],col="orange",pch=17)
+points(x[topX], y[topX], col = "blue", pch = 17)
+points(x[topY], y[topY], col = "green", pch = 17)
+textplot3(x[labels],y[labels],words=labels,font=2,cex=1,show.lines=T,col="black", line.col="darkgrey")
+legend("bottomright", pch=17, legend = c(paste0("Significant in Meth: ",length(onlyX)),
+                                      paste0("Significant in Oxy: ", length(onlyY)),
+                                      paste0("Opposite significance: ", length(both))),
+       col = c("blue","green", "orange"),pt.cex=2)
+dev.off()
+
+#### GSEA barplots
+load("results/001_GSEA_HIVm_HIV_Meth.rda")
+meth <- gseas[gseas$padj <= 0.05, ]
+load("results/001_GSEA_HIVm_HIV_Oxy.rda")
+oxy <- gseas[gseas$padj <= 0.05, ]
+
+#### HIV Barplots
+
+# All pathways
+meth <- meth[order(-abs(meth$NES)), ]
+
+### Table of top pathways ----
+top <- meth[meth$NES<0, ][1:15, ]
+top <- rbind(top, meth[meth$NES>0, ][15:1, ])
+top <- top[order(top$NES), ]
+toplot <- setNames(top$NES, top$pathway)
+# Format
+#names(toplot) <- gsub("GO_", "", names(toplot))
+names(toplot) <- gsub("_", " ", names(toplot))
+names(toplot) <- str_to_title(names(toplot))
+names(toplot) <- gsub("Reactome|Wp", "", names(toplot))
+names(toplot) <- gsub("^ ", "", names(toplot))
+png("plots/001_HIV_Meth_GSEA.png", w =  8000, h =  3500, res =  500)
+par(mar =  c(4, 1, 3, 1))
+bp <- barplot(toplot, horiz =  TRUE, xlab =  "Normalized Enrichment Score", 
+              xlim =  1.3*c(-max(abs(toplot)), max(abs(toplot))), 
+              main =  "Meth vs. Naive (HIV),  top Pathways", 
+              col =  rep(c("cornflowerblue", "salmon"), each =  15), 
+              yaxt =  "n", cex.main =  2
+)
+text(0, bp[1:15, 1], names(toplot)[1:15], pos =  4)
+text(0, bp[16:30, 1], names(toplot)[16:30], pos =  2)
+#abline(v =  c(-p2z(0.05), p2z(0.05)), lty =  2)
+dev.off()
+
+### Oxy
+# All pathways
+oxy <- oxy[order(-abs(oxy$NES)), ]
+
+### Table of top pathways ----
+top <- oxy[oxy$NES<0, ][1:15, ]
+top <- rbind(top, oxy[oxy$NES>0, ][15:1, ])
+top <- top[order(top$NES), ]
+toplot <- setNames(top$NES, top$pathway)
+# Format
+#names(toplot) <- gsub("GO_", "", names(toplot))
+names(toplot) <- gsub("_", " ", names(toplot))
+names(toplot) <- str_to_title(names(toplot))
+names(toplot) <- gsub("Reactome|Wp", "", names(toplot))
+names(toplot) <- gsub("^ ", "", names(toplot))
+png("plots/001_HIV_Oxy_GSEA.png", w =  8000, h =  3500, res =  500)
+par(mar =  c(4, 1, 3, 1))
+bp <- barplot(toplot, horiz =  TRUE, xlab =  "Normalized Enrichment Score", 
+              xlim =  1.3*c(-max(abs(toplot)), max(abs(toplot))), 
+              main =  "Oxy vs. Naive (HIV),  top Pathways", 
+              col =  rep(c("cornflowerblue", "salmon"), each =  15), 
+              yaxt =  "n", cex.main =  2
+)
+text(0, bp[1:15, 1], names(toplot)[1:15], pos =  4)
+text(0, bp[16:30, 1], names(toplot)[16:30], pos =  2)
+#abline(v =  c(-p2z(0.05), p2z(0.05)), lty =  2)
+dev.off()
+
+
+### WT GSEA
+#### GSEA barplots
+load("results/001_GSEA_WTm_WT_Meth.rda")
+meth <- gseas[gseas$padj <= 0.05, ]
+load("results/001_GSEA_WTm_WT_Oxy.rda")
+oxy <- gseas[gseas$padj <= 0.05, ]
+
+#### HIV Barplots
+
+# All pathways
+meth <- meth[order(-abs(meth$NES)), ]
+
+### Table of top pathways ----
+top <- meth[meth$NES<0, ][1:15, ]
+top <- rbind(top, meth[meth$NES>0, ][15:1, ])
+top <- top[order(top$NES), ]
+toplot <- setNames(top$NES, top$pathway)
+# Format
+#names(toplot) <- gsub("GO_", "", names(toplot))
+names(toplot) <- gsub("_", " ", names(toplot))
+names(toplot) <- str_to_title(names(toplot))
+names(toplot) <- gsub("Reactome|Wp", "", names(toplot))
+names(toplot) <- gsub("^ ", "", names(toplot))
+png("plots/001_WT_Meth_GSEA.png", w =  8000, h =  3500, res =  500)
+par(mar =  c(4, 1, 3, 1))
+bp <- barplot(toplot, horiz =  TRUE, xlab =  "Normalized Enrichment Score", 
+              xlim =  1.3*c(-max(abs(toplot)), max(abs(toplot))), 
+              main =  "Meth vs. Naive (WT),  top Pathways", 
+              col =  rep(c("cornflowerblue", "salmon"), each =  15), 
+              yaxt =  "n", cex.main =  2
+)
+text(0, bp[1:15, 1], names(toplot)[1:15], pos =  4)
+text(0, bp[16:30, 1], names(toplot)[16:30], pos =  2)
+#abline(v =  c(-p2z(0.05), p2z(0.05)), lty =  2)
+dev.off()
+
+### Oxy
+# All pathways
+oxy <- oxy[order(-abs(oxy$NES)), ]
+
+### Table of top pathways ----
+top <- oxy[oxy$NES<0, ][1:15, ]
+top <- rbind(top, oxy[oxy$NES>0, ][15:1, ])
+top <- top[order(top$NES), ]
+toplot <- setNames(top$NES, top$pathway)
+# Format
+#names(toplot) <- gsub("GO_", "", names(toplot))
+names(toplot) <- gsub("_", " ", names(toplot))
+names(toplot) <- str_to_title(names(toplot))
+names(toplot) <- gsub("Reactome|Wp", "", names(toplot))
+names(toplot) <- gsub("^ ", "", names(toplot))
+png("plots/001_WT_Oxy_GSEA.png", w =  8000, h =  3500, res =  500)
+par(mar =  c(4, 1, 3, 1))
+bp <- barplot(toplot, horiz =  TRUE, xlab =  "Normalized Enrichment Score", 
+              xlim =  1.3*c(-max(abs(toplot)), max(abs(toplot))), 
+              main =  "Oxy vs. Naive (WT),  top Pathways", 
+              col =  rep(c("cornflowerblue", "salmon"), each =  15), 
+              yaxt =  "n", cex.main =  2
+)
+text(0, bp[1:15, 1], names(toplot)[1:15], pos =  4)
+text(0, bp[16:30, 1], names(toplot)[16:30], pos =  2)
+#abline(v =  c(-p2z(0.05), p2z(0.05)), lty =  2)
 dev.off()
