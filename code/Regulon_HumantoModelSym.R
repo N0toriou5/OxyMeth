@@ -5,18 +5,18 @@ require("babelgene")
 Regulon_HumantoModelSym <- function(regulon, species = "mouse", limit = NULL) {
   
   ### limit to nodes showing targets >= limit
-  if (is.integer(limit)) {
-    limit <- limit 
-    ntar <- sapply(regulon, function(x){
-      length(x$tfmode)
-    })
-    keep <- which(ntar >= limit)
-    regulon <- regulon[keep]
+  if (is.null(limit)) {
     
-    else {
-      regulon <- regulon
+    regulon <- regulon
+    
+    } else {
+      limit <- limit 
+      ntar <- sapply(regulon, function(x){
+        length(x$tfmode)
+      })
+      keep <- which(ntar >= limit)
+      regulon <- regulon[keep]
     }
-  }
   
   gene_mapping <- orthologs(genes = names(regulon), species = species)
   human_genes <- c(names(regulon))
