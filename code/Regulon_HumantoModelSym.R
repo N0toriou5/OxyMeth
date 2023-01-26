@@ -46,7 +46,11 @@ Regulon_HumantoModelSym <- function(regulon, species = "mouse", limit = NULL) {
   #### now for the target
   for (i in 1:length(regulon)) {
     nameVec <- names(regulon[[i]]$tfmode)
-    gene_mapping <- orthologs(genes = nameVec, species = species)
+    tryCatch(gene_mapping <- orthologs(genes = nameVec, species = species),
+             error = function(x){         
+               message("ERROR: some nodes in the regulon may have 0 targets left.")
+               stop("Please, specify a size limit for the sub-networks!")
+             })
     idx <- match(nameVec, gene_mapping$human_symbol)
     gene_mapping <- gene_mapping[idx,]
     names(regulon[[i]]$tfmode) <- gene_mapping$symbol
