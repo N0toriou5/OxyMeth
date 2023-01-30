@@ -913,9 +913,9 @@ y <- y[common]
 sig1 <- rownames(meth_DE[abs(meth_DE$log2FoldChange) >= 0.5 & meth_DE$padj <= 0.05, ])
 sig2 <- rownames(oxy_DE[abs(oxy_DE$log2FoldChange) >= 0.5 & oxy_DE$padj <= 0.05, ])
 both <- intersect(sig1,sig2)
-sig1 <- setdiff(sig1, sig2)
-sig2 <- setdiff(sig2, sig1)
-png("plots/000_DE_HIV_WT_compare.png",w=2000,h=2000,res=300)
+sigX <- setdiff(sig1, sig2)
+sigY <- setdiff(sig2, sig1)
+png("plots/000_DE_HIV_WT_compare.png",w=3000,h=3000,res=300)
 plot(x,y,pch=20,col="grey",xlab="Meth (stat)",ylab="Oxy (stat)",main="HIV vs. WT",
      xlim=1.1*c(min(x),max(x)))
 pcc<-cor.test(x,y)
@@ -923,13 +923,14 @@ mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
 lml<-lm(y~x)
 abline(lml,lwd=1)
 set.seed(1)
-points(x[sig1],y[sig1],col="blue",pch=20)
-points(x[sig2],y[sig2],col="red",pch=20)
-points(x[both],y[both],col="orange",pch=20)
-#textplot3(x[top],y[top],words=top,font=2,cex=1,show.lines=F,col="black")
-legend("bottomright",pch=20,legend=c(paste0("Significant in Meth: ",length(sig1)),
-                                     paste0("Significant in Oxy: ",length(sig2)),
-       paste0("Significant in both: ",length(both))), col=c("blue","red", "orange"), pt.cex=2)
+points(x[sigX],y[sigX],col="blue",pch=20)
+points(x[sigY],y[sigY],col="red",pch=20)
+points(x[both],y[both],col="green",pch=20)
+labels <- unique(c(sigX, sigY, both))
+textplot3(x[labels],y[labels],words=labels,font=2,cex=1,show.lines=T,col="black", line.col = "grey")
+legend("bottomright",pch=20,legend=c(paste0("Significant only in Meth: ",length(sigX)),
+                                     paste0("Significant only in Oxy: ",length(sigY)),
+       paste0("Significant in both: ",length(both))), col=c("blue","red", "green"), pt.cex=2)
 dev.off()
 
 ### MRA Meth
@@ -1034,7 +1035,7 @@ y <- y[common]
 #### Plotting
 png("plots/002_compare_GSEA_HIV_WT.png", h = 3000, w = 9000, res = 300)
 plot(x, y, pch = 20, col = "grey", xlab = "Meth (NES)", ylab = "Oxy (NES)",
-     main = "HIV vs. WT Master Regulators", xlim=1.1*c(min(x),max(x)))
+     main = "HIV vs. WT Pathways", xlim=1.1*c(min(x),max(x)))
 # pcc<-cor.test(x,y)
 # mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
 # lml<-lm(y~x)
