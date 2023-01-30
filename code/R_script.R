@@ -838,3 +838,96 @@ text(0, bp[1:15, 1], names(toplot)[1:15], pos =  4)
 text(0, bp[16:30, 1], names(toplot)[16:30], pos =  2)
 #abline(v =  c(-p2z(0.05), p2z(0.05)), lty =  2)
 dev.off()
+
+
+### HIV vs WT contrast in Meth
+load("results/000_rawcounts_input.rda")
+load("results/000_annotation_input.rda")
+
+subsamples <- rownames(annotation)[annotation$Treatment=="Meth"]
+subraw <- rawcounts[, subsamples]
+subannot <- annotation[subsamples, ]
+# DESeq2 block (filter out poorly expressed genes)
+dds <- DESeqDataSetFromMatrix(countData=subraw,colData=subannot,design=~Type)
+dds <- dds[rowSums(counts(dds) >= 10) >= 3,] 
+# This requires genes to have Y = 3 or more samples with counts of X = 10 or more. 
+# It therefore filters out genes that have less than Y samples with counts of X or more.
+dds$Type<-relevel(dds$Type, ref = "WT")
+dea <- DESeq(dds, parallel = TRUE)
+#res <- results(dea, contrast = c("Treatment","Meth","Naive"))
+#res <- as.data.frame(lfcShrink(dds = dea, contrast=c("Treatment","Meth","Naive"), res = res, type = "ashr")) 
+res <- as.data.frame(results(dea,contrast=c("Type","HIV","WT")))
+save(res, file = "results/000_HIV_WT_Meth.rda")
+res<-na.omit(res)
+
+# GSEA
+signature <- setNames(res$stat, rownames(res))
+set.seed(1)
+gseas <- fgseaMultilevel(pathways = mlist, stats = signature, eps = 0, minSize = 15,
+                         maxSize = Inf, nproc = 14, nPermSimple = 10000)
+gseas <- gseas[order(gseas$pval),]
+save(gseas, file="results/001_GSEA_HIV_WT_Meth.rda")
+write.xlsx2(gseas, file= "results/001_GSEA_HIV_WT_Meth.xlsx", row.names = FALSE)
+
+#### Same thing with Oxy samples
+load("results/001_rawcounts_Oxy.rda")
+load("results/001_annotation_Oxy.rda")
+subsamples <- rownames(annotation)[annotation$Treatment=="Meth"]
+subraw <- rawcounts[, subsamples]
+subannot <- annotation[subsamples, ]
+# DESeq2 block (filter out poorly expressed genes)
+dds <- DESeqDataSetFromMatrix(countData=subraw,colData=subannot,design=~Type)
+dds <- dds[rowSums(counts(dds) >= 10) >= 3,] 
+# This requires genes to have Y = 3 or more samples with counts of X = 10 or more. 
+# It therefore filters out genes that have less than Y samples with counts of X or more.
+dds$Type<-relevel(dds$Type, ref = "WT")
+dea <- DESeq(dds, parallel = TRUE)
+#res <- results(dea, contrast = c("Treatment","Meth","Naive"))
+#res <- as.data.frame(lfcShrink(dds = dea, contrast=c("Treatment","Meth","Naive"), res = res, type = "ashr")) 
+res <- as.data.frame(results(dea,contrast=c("Type","HIV","WT")))
+save(res, file = "results/000_HIV_WT_Oxy.rda")
+res <- na.omit(res)
+
+# GSEA
+signature <- setNames(res$stat, rownames(res))
+set.seed(1)
+gseas <- fgseaMultilevel(pathways = mlist, stats = signature, eps = 0, minSize = 15,
+                         maxSize = Inf, nproc = 14, nPermSimple = 10000)
+gseas <- gseas[order(gseas$pval),]
+save(gseas, file="results/001_GSEA_HIV_WT_Oxy.rda")
+write.xlsx2(gseas, file= "results/001_GSEA_HIV_WT_Oxy.xlsx", row.names = FALSE)
+
+# Meth vs. Oxy in WT
+load("results/000_HIV_WT_Meth.rda")
+meth_DE <- na.omit(res)
+load("results/000_HIV_WT_Oxy.rda")
+oxy_DE <- na.omit(res)
+
+### scatterplot
+x <- setNames(meth_DE$stat, rownames(meth_DE))
+y <- setNames(oxy_DE$stat, rownames(oxy_DE))
+
+common <- intersect(names(x), names(y))
+x <- x[common]
+y <- y[common]
+sig1 <- rownames(meth_DE[abs(meth_DE$log2FoldChange) >= 0.5 & meth_DE$padj <= 0.05, ])
+sig2 <- rownames(oxy_DE[abs(oxy_DE$log2FoldChange) >= 0.5 & oxy_DE$padj <= 0.05, ])
+both <- intersect(sig1,sig2)
+sig1 <- setdiff(sig1, sig2)
+sig2 <- setdiff(sig2, sig1)
+png("plots/000_DE_HIV_WT_compare.png",w=2000,h=2000,res=300)
+plot(x,y,pch=20,col="grey",xlab="Meth (stat)",ylab="Oxy (stat)",main="HIV vs. WT",
+     xlim=1.1*c(min(x),max(x)))
+pcc<-cor.test(x,y)
+mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
+lml<-lm(y~x)
+abline(lml,lwd=1)
+set.seed(1)
+points(x[sig1],y[sig1],col="blue",pch=20)
+points(x[sig2],y[sig2],col="red",pch=20)
+points(x[both],y[both],col="orange",pch=20)
+#textplot3(x[top],y[top],words=top,font=2,cex=1,show.lines=F,col="black")
+legend("bottomright",pch=20,legend=c(paste0("Significant in Meth: ",length(sig1)),
+                                     paste0("Significant in Oxy: ",length(sig2)),
+       paste0("Significant in both: ",length(both))), col=c("blue","red", "orange"), pt.cex=2)
+dev.off()
