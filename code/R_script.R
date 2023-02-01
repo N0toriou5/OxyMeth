@@ -387,7 +387,7 @@ sig1 <- rownames(hiv_meth[abs(hiv_meth$log2FoldChange) >= 0.5 & hiv_meth$padj <=
 sig2 <- rownames(hiv_oxy[abs(hiv_oxy$log2FoldChange) >= 0.5 & hiv_oxy$padj <= 0.05, ])
 length(intersect(sig1,sig2))
 png("plots/000_DE_HIV_compare.png",w=2000,h=2000,res=300)
-plot(x,y,pch=20,col="grey",xlab="Meth vs. Naive (stat)",ylab="Oxy vs. Naive (stat)",main="HIV")
+plot(x,y,pch=20,col="grey",xlab="HIV-Meth vs. HIV-Naive (stat)",ylab="HIV-Oxy vs. HIV-Naive (stat)",main="HIV")
 pcc<-cor.test(x,y)
 mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
 lml<-lm(y~x)
@@ -420,7 +420,7 @@ sig1 <- rownames(wt_meth[abs(wt_meth$log2FoldChange) >= 0.5 & wt_meth$padj <= 0.
 sig2 <- rownames(wt_oxy[abs(wt_oxy$log2FoldChange) >= 0.5 & wt_oxy$padj <= 0.05, ])
 length(intersect(sig1,sig2))
 png("plots/000_DE_WT_compare.png",w=2000,h=2000,res=300)
-plot(x,y,pch=20,col="grey",xlab="Meth vs. Naive (stat)",ylab="Oxy vs. Naive (stat)",main="WT")
+plot(x,y,pch=20,col="grey",xlab="WT-Meth vs. WT-Naive (stat)",ylab="WT-Oxy vs. WT-Naive (stat)",main="WT")
 pcc<-cor.test(x,y)
 mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
 lml<-lm(y~x)
@@ -451,7 +451,7 @@ common <- intersect(names(x), names(y))
 x <- x[common]
 y <- y[common]
 png("plots/000_DE_HIV_compare.png",w=2000,h=2000,res=300)
-plot(x,y,pch=20,col="grey",xlab="Meth vs. Naive (stat)",ylab="Oxy vs. Naive (stat)",main="HIV")
+plot(x,y,pch=20,col="grey",xlab="HIV-Meth vs. HIV-Naive (stat)",ylab="HIV-Oxy vs. HIV-Naive (stat)",main="HIV")
 pcc<-cor.test(x,y)
 mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
 lml<-lm(y~x)
@@ -916,7 +916,7 @@ both <- intersect(sig1,sig2)
 sigX <- setdiff(sig1, sig2)
 sigY <- setdiff(sig2, sig1)
 png("plots/000_DE_HIV_WT_compare.png",w=3000,h=3000,res=300)
-plot(x,y,pch=20,col="grey",xlab="Meth (stat)",ylab="Oxy (stat)",main="HIV vs. WT",
+plot(x,y,pch=20,col="grey",xlab="HIV-Meth vs. WT-Meth (DESeq2 stat)",ylab="HIV-Oxy vs. WT-Oxy (DESeq2 stat)",main="Meth vs. Oxy",
      xlim=1.1*c(min(x),max(x)))
 pcc<-cor.test(x,y)
 mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
@@ -963,8 +963,8 @@ y <- y[common]
 
 #### Plotting
 png("plots/002_compareMRs_HIV_WT.png", h = 2500, w = 2500, res = 300)
-plot(x, y, pch = 20, col = "grey", xlab = "Meth (NES)", ylab = "Oxy (NES)",
-     main = "HIV vs. WT Master Regulators", xlim=1.1*c(min(x),max(x)))
+plot(x, y, pch = 20, col = "grey", xlab = "HIV-Meth vs. WT-Meth (NES)", ylab = "HIV-Oxy vs. WT-Oxy (NES)",
+     main = "Meth vs. Oxy", xlim=1.1*c(min(x),max(x)))
 # pcc<-cor.test(x,y)
 # mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
 # lml<-lm(y~x)
@@ -1034,8 +1034,8 @@ y <- y[common]
 
 #### Plotting
 png("plots/002_compare_GSEA_HIV_WT.png", h = 3000, w = 9000, res = 300)
-plot(x, y, pch = 20, col = "grey", xlab = "Meth (NES)", ylab = "Oxy (NES)",
-     main = "HIV vs. WT Pathways", xlim=1.1*c(min(x),max(x)))
+plot(x, y, pch = 20, col = "grey", xlab = "HIV-Meth vs. WT-Meth (NES)", ylab = "HIV-Oxy vs. WT-Oxy (NES)",
+     main = "Meth vs. Oxy Pathways", xlim=1.1*c(min(x),max(x)))
 # pcc<-cor.test(x,y)
 # mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
 # lml<-lm(y~x)
@@ -1094,8 +1094,8 @@ y <- y[common]
 
 #### Plotting
 png("plots/002_compare_GSEAS_HIV_Meth_Oxy.png", h = 3000, w = 12000, res = 300)
-plot(x, y, pch = 20, col = "grey", xlab = "Meth (NES)", ylab = "Oxy (NES)",
-     main = "HIV vs. Naive", xlim=1.1*c(min(x),max(x)))
+plot(x, y, pch = 20, col = "grey", xlab = "HIV-Meth vs. HIV-Naive (NES)", ylab = "HIV-Oxy vs. HIV-Naive (NES)",
+     main = "Meth vs. Oxy (Pathways)", xlim=1.1*c(min(x),max(x)))
 # pcc<-cor.test(x,y)
 # mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
 # lml<-lm(y~x)
@@ -1169,8 +1169,8 @@ y <- y[common]
 
 #### Plotting
 png("plots/002_compare_GSEAS_WT_Meth_Oxy.png", h = 3000, w = 8000, res = 300)
-plot(x, y, pch = 20, col = "grey", xlab = "Meth (NES)", ylab = "Oxy (NES)",
-     main = "WT vs. Naive", xlim=1.1*c(min(x),max(x)))
+plot(x, y, pch = 20, col = "grey", xlab = "WT-Meth vs. WT-Naive (NES)", ylab = "WT-Oxy vs. WT-Naive (NES)",
+     main = "Meth vs. Oxy (Pathways)", xlim=1.1*c(min(x),max(x)))
 # pcc<-cor.test(x,y)
 # mtext(paste0("R=",signif(pcc$estimate,2)," p=",signif(pcc$p.value,3)))
 # lml<-lm(y~x)
