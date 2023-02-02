@@ -933,6 +933,40 @@ legend("bottomright",pch=20,legend=c(paste0("Significant only in Meth: ",length(
        paste0("Significant in both: ",length(both))), col=c("blue","red", "green"), pt.cex=2)
 dev.off()
 
+## Comparison Table
+i <- 1
+meth_DE <- meth_DE[common,]
+oxy_DE <- oxy_DE[common,]
+meth_DE$color <- "none"
+oxy_DE$color <- "none"
+for (name in common) {
+  x <- name
+  if (name %in% sigX) {
+    names(x) <- "blue"
+  }
+  else if (name %in% sigY) {
+    names(x) <- "red"
+  }
+  else if (name %in% both) {
+    names(x) <- "green"
+  }
+  else {
+    names(x) <- "none"
+  }
+  meth_DE[i,7] <- names(x)
+  oxy_DE[i,7] <- names(x)
+  i <- i + 1
+}
+
+### order and print table
+dtab <- cbind(meth_DE, oxy_DE) 
+write.xlsx(dtab,"results/DEG_comparison.xlsx")
+### single tables
+meth_DE <- meth_DE[order(meth_DE$padj),]
+write.xlsx(meth_DE,"results/HIV_Meth-WT_Meth.xlsx")
+oxy_DE <- oxy_DE[order(oxy_DE$padj),]
+write.xlsx(oxy_DE,"results/HIV_Oxy-WT_Oxy.xlsx")
+
 ### MRA Meth
 load("results/000_expmat.rda")
 load("results/000_annotation_input.rda")
@@ -1008,6 +1042,41 @@ legend("bottomright", pch=17, legend = c(paste0("Significant in Meth: ",length(o
                                          paste0("Opposite significance: ", length(both))),
        col = c("blue","green", "orange"),pt.cex=2)
 dev.off()
+
+meth_df <- data.frame(x)
+colnames(meth_df) <- "NES"
+oxy_df <- data.frame(y)
+colnames(oxy_df) <- "NES"
+
+## Comparison Table
+i <- 1
+meth_df$color <- "none"
+oxy_df$color <- "none"
+meth_df <- meth_df[common,]
+oxy_df <- oxy_df[common,]
+
+for (name in common) {
+  x <- name
+  if (name %in% onlyX) {
+    names(x) <- "blue"
+  }
+  else if (name %in% onlyY) {
+    names(x) <- "red"
+  }
+  else if (name %in% both) {
+    names(x) <- "orange"
+  }
+  else {
+    names(x) <- "none"
+  }
+  meth_df[i,2] <- names(x)
+  oxy_df[i,2] <- names(x)
+  i <- i + 1
+}
+
+### order and print table
+dtab <- cbind(meth_df, oxy_df) 
+write.xlsx(dtab,"results/MRs_comparison.xlsx")
 
 #### GSEA comparisons
 load("results/001_GSEA_HIV_WT_Meth.rda")
