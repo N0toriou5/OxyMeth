@@ -1209,6 +1209,38 @@ legend("topright", pch=17, legend = c(paste0("Significant in Meth: ",length(only
        col = c("blue","green", "orange"),pt.cex=2)
 dev.off()
 
+### Table GSEAs
+i <- 1
+meth_df <- x
+oxy_df <- y
+meth_df$color <- "none"
+oxy_df$color <- "none"
+meth_df <- meth_df[common,]
+oxy_df <- oxy_df[common,]
+
+for (name in common) {
+  x <- name
+  if (name %in% onlyX) {
+    names(x) <- "blue"
+  }
+  else if (name %in% onlyY) {
+    names(x) <- "red"
+  }
+  else if (name %in% both) {
+    names(x) <- "orange"
+  }
+  else {
+    names(x) <- "none"
+  }
+  meth_df[i,2] <- names(x)
+  oxy_df[i,2] <- names(x)
+  i <- i + 1
+}
+
+### order and print table
+dtab <- cbind(meth_df, oxy_df) 
+write.xlsx(dtab,"results/MRs_comparison.xlsx")
+
 # Meth vs. Oxy in WT
 load("results/001_GSEA_WTm_WT_Meth.rda")
 gseas$pathway <- gsub("_", " ", gseas$pathway)
