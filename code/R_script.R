@@ -1145,18 +1145,21 @@ topX <- names(sort(abs(topX), decreasing = T)[1:5])
 topY <- sort(abs(y), decreasing = T)
 topY <- topY[onlyY]
 topY <- names(sort(abs(topY), decreasing = T)[1:5])
-
-labels <- c(topX, topY, both)
+same <- intersect(sigX,sigY)
+same <- setdiff(same, both)
+labels <- c(topX, topY, both,same)
 set.seed(1)
 #points(x[both],y[both],col="orange",pch=17)
-points(x[topX], y[topX], col = "blue", pch = 17)
-points(x[topY], y[topY], col = "green", pch = 17)
+points(x[onlyX], y[onlyX], col = "blue", pch = 17)
+points(x[onlyY], y[onlyY], col = "red", pch = 17)
 points(x[both], y[both], col = "orange", pch = 17)
+points(x[same], y[same], col = "green", pch = 17)
 textplot3(x[labels],y[labels],words=labels,font=2,cex=1,show.lines=T,col="black", line.col="darkgrey")
 legend("bottomright", pch=17, legend = c(paste0("Significant in Meth: ",length(onlyX)),
                                          paste0("Significant in Oxy: ", length(onlyY)),
-                                         paste0("Opposite significance: ", length(both))),
-       col = c("blue","green", "orange"),pt.cex=2)
+                                         paste0("Opposite significance: ", length(both)),
+                                         paste0("Concordandt MRs: ", length(same))),
+       col = c("blue","red", "orange", "green"),pt.cex=2)
 dev.off()
 
 meth_df <- data.frame(x)
