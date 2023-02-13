@@ -218,15 +218,15 @@ expmat <- vst(rawcounts, blind = TRUE, nsub = 1000, fitType = "parametric")
 save(expmat,file="results/001_expmat_Oxy.rda")
 
 # PCA
-
+col <- ifelse(annotation$Treatment=="Meth", "red", "grey")
 png("plots/001_subreadpca_Oxy.png",w=2000,h=2000,p=25)
 pca<-prcomp(t(expmat))
 totvar<-sum(pca$sdev^2)
 pcavar<-((pca$sdev^2)/totvar)*100
 x<-setNames(pca$x[,1],colnames(expmat))
 y<-setNames(pca$x[,2],colnames(expmat))
-plot(x,y,pch=20, main=paste0("HIV vs. WT Meth"),
-     xlim=c(min(x)*1.5,max(x)*1.5),cex=2,col="grey",
+plot(x,y,pch=20, main=paste0("HIV vs. WT Oxy"),
+     xlim=c(min(x)*1.5,max(x)*1.5),cex=2,col=col,
      xlab=paste0("PC",1," (",signif(pcavar[1],3),"%)"),
      ylab=paste0("PC",2," (",signif(pcavar[2],3),"%)")
 )
@@ -869,6 +869,64 @@ gseas <- gseas[order(gseas$pval),]
 save(gseas, file="results/001_GSEA_HIV_WT_Meth.rda")
 write.xlsx2(gseas, file= "results/001_GSEA_HIV_WT_Meth.xlsx", row.names = FALSE)
 
+#### Plotting Volcano and GSEA results
+res<-res[order(res$padj),]
+# topup<-rownames(res[res$log2FoldChange>=0.5,])[1:10]
+# topdn<-rownames(res[res$log2FoldChange<= -0.5,])[1:10]
+# top<-c(topup,topdn)
+png("plots/001_volcano_HIV_METH_vs_WT_METH.png", w=2500,h=2500, res=300)
+EnhancedVolcano(res, subtitle = "",
+                lab = rownames(res),
+                x = 'log2FoldChange',
+                y = 'padj',
+                #selectLab = top,
+                xlim = c(-2, 2),
+                #ylim = c(0,12),
+                title = 'HIV + Meth vs. WT + Meth',
+                pCutoff = 0.05, #0.05 cutoff
+                FCcutoff = 0.5, # 2-fold change
+                labFace = "bold",
+                labSize = 4,
+                col = c('lightgrey', 'lightblue', 'lightpink', 'salmon'),
+                colAlpha = 4/5,
+                drawConnectors = TRUE,
+                widthConnectors = 0.3,colConnectors = 'gray51',maxoverlapsConnectors = Inf,
+                legendLabSize = 14,
+                legendIconSize = 4.0,
+                caption = paste0('Upregulated = ', nrow(res[res$log2FoldChange>0.5&res$padj<=0.05,]), ' genes',"\n",'Downregulated = ',
+                                 nrow(res[res$log2FoldChange< -0.5&res$padj<=0.05,]), ' genes'))+
+  theme(plot.title = element_text(hjust = 0.5))
+dev.off()
+write.xlsx(res,file = "results/001_DEA_HIV_METH_WT_METH.xlsx")
+
+# All pathways
+gseas <- gseas[order(-abs(gseas$NES)), ]
+
+### Table of top pathways ----
+top <- gseas[gseas$NES<0, ][1:15, ]
+top <- rbind(top, gseas[gseas$NES>0, ][15:1, ])
+top <- top[order(top$NES), ]
+toplot <- setNames(top$NES, top$pathway)
+# Format
+#names(toplot) <- gsub("GO_", "", names(toplot))
+names(toplot) <- gsub("_", " ", names(toplot))
+names(toplot) <- str_to_title(names(toplot))
+#names(toplot) <- gsub("Reactome|Wp", "", names(toplot))
+names(toplot) <- gsub("^ ", "", names(toplot))
+png("plots/001_HIV_METH_WT_METH_GSEA.png", w =  8000, h =  3500, res =  500)
+par(mar =  c(4, 1, 3, 1))
+bp <- barplot(toplot, horiz =  TRUE, xlab =  "Normalized Enrichment Score", 
+              xlim =  1.3*c(-max(abs(toplot)), max(abs(toplot))), 
+              main =  "HIV + Meth vs. WT+ Meth,  top Pathways", 
+              col =  rep(c("cornflowerblue", "salmon"), each =  15), 
+              yaxt =  "n", cex.main =  2
+)
+text(0, bp[1:15, 1], names(toplot)[1:15], pos =  4)
+text(0, bp[16:30, 1], names(toplot)[16:30], pos =  2)
+#abline(v =  c(-p2z(0.05), p2z(0.05)), lty =  2)
+dev.off()
+
+
 #### Same thing with Oxy samples
 load("results/001_rawcounts_Oxy.rda")
 load("results/001_annotation_Oxy.rda")
@@ -895,7 +953,65 @@ gseas <- fgseaMultilevel(pathways = mlist, stats = signature, eps = 0, minSize =
                          maxSize = Inf, nproc = 14, nPermSimple = 10000)
 gseas <- gseas[order(gseas$pval),]
 save(gseas, file="results/001_GSEA_HIV_WT_Oxy.rda")
-write.xlsx2(gseas, file= "results/001_GSEA_HIV_WT_Oxy.xlsx", row.names = FALSE)
+write.xlsx2(gseas, file= "results/001_GSEA_HIV_OXY_WT_OXY.xlsx", row.names = FALSE)
+
+
+### Plotting part
+res<-res[order(res$padj),]
+# topup<-rownames(res[res$log2FoldChange>=0.5,])[1:10]
+# topdn<-rownames(res[res$log2FoldChange<= -0.5,])[1:10]
+# top<-c(topup,topdn)
+png("plots/001_volcano_HIV_OXY_vs_WT_OXY.png", w=2500,h=2500, res=300)
+EnhancedVolcano(res, subtitle = "",
+                lab = rownames(res),
+                x = 'log2FoldChange',
+                y = 'padj',
+                #selectLab = top,
+                xlim = c(-2, 2),
+                #ylim = c(0,12),
+                title = 'HIV + Oxy vs. WT + Oxy',
+                pCutoff = 0.05, #0.05 cutoff
+                FCcutoff = 0.5, # 2-fold change
+                labFace = "bold",
+                labSize = 4,
+                col = c('lightgrey', 'lightblue', 'lightpink', 'salmon'),
+                colAlpha = 4/5,
+                drawConnectors = TRUE,
+                widthConnectors = 0.3,colConnectors = 'gray51',maxoverlapsConnectors = Inf,
+                legendLabSize = 14,
+                legendIconSize = 4.0,
+                caption = paste0('Upregulated = ', nrow(res[res$log2FoldChange>0.5&res$padj<=0.05,]), ' genes',"\n",'Downregulated = ',
+                                 nrow(res[res$log2FoldChange< -0.5&res$padj<=0.05,]), ' genes'))+
+  theme(plot.title = element_text(hjust = 0.5))
+dev.off()
+write.xlsx(res,file = "results/001_DEA_HIV_OXY_WT_OXY.xlsx")
+
+# All pathways
+gseas <- gseas[order(-abs(gseas$NES)), ]
+
+### Table of top pathways ----
+top <- gseas[gseas$NES<0, ][1:15, ]
+top <- rbind(top, gseas[gseas$NES>0, ][15:1, ])
+top <- top[order(top$NES), ]
+toplot <- setNames(top$NES, top$pathway)
+# Format
+#names(toplot) <- gsub("GO_", "", names(toplot))
+names(toplot) <- gsub("_", " ", names(toplot))
+names(toplot) <- str_to_title(names(toplot))
+#names(toplot) <- gsub("Reactome|Wp", "", names(toplot))
+names(toplot) <- gsub("^ ", "", names(toplot))
+png("plots/001_HIV_OXY_WT_OXY_GSEA.png", w =  8000, h =  3500, res =  500)
+par(mar =  c(4, 1, 3, 1))
+bp <- barplot(toplot, horiz =  TRUE, xlab =  "Normalized Enrichment Score", 
+              xlim =  1.3*c(-max(abs(toplot)), max(abs(toplot))), 
+              main =  "HIV + Oxy vs. WT + Oxy,  top Pathways", 
+              col =  rep(c("cornflowerblue", "salmon"), each =  15), 
+              yaxt =  "n", cex.main =  2
+)
+text(0, bp[1:15, 1], names(toplot)[1:15], pos =  4)
+text(0, bp[16:30, 1], names(toplot)[16:30], pos =  2)
+#abline(v =  c(-p2z(0.05), p2z(0.05)), lty =  2)
+dev.off()
 
 # Meth vs. Oxy in WT
 load("results/000_HIV_WT_Meth.rda")
@@ -1136,10 +1252,10 @@ dev.off()
 #### Compare GSEA scatterplot -----------------
 # Meth vs. Oxy in HIV
 load("results/001_GSEA_HIVm_HIV_Meth.rda")
-gseas$pathway <- gsub("_", " ", gseas$pathway)
-gseas$pathway <- str_to_title(gseas$pathway)
-gseas$pathway <- gsub("Reactome|Wp|Kegg", "", gseas$pathway)
-gseas$pathway <- gsub("^ ", "", gseas$pathway)
+# gseas$pathway <- gsub("_", " ", gseas$pathway)
+# gseas$pathway <- str_to_title(gseas$pathway)
+#gseas$pathway <- gsub("Reactome|Wp|Kegg", "", gseas$pathway)
+#gseas$pathway <- gsub("^ ", "", gseas$pathway)
 paths1 <- gseas
 x <- setNames(paths1$NES, paths1$pathway)
 # names(x) <- gsub("_", " ", names(x))
@@ -1147,10 +1263,10 @@ x <- setNames(paths1$NES, paths1$pathway)
 # names(x) <- gsub("Reactome|Wp|Kegg", "", names(x))
 # names(x) <- gsub("^ ", "", names(x))
 load("results/001_GSEA_HIVm_HIV_Oxy.rda")
-gseas$pathway <- gsub("_", " ", gseas$pathway)
-gseas$pathway <- str_to_title(gseas$pathway)
-gseas$pathway <- gsub("Reactome|Wp|Kegg", "", gseas$pathway)
-gseas$pathway <- gsub("^ ", "", gseas$pathway)
+# gseas$pathway <- gsub("_", " ", gseas$pathway)
+# gseas$pathway <- str_to_title(gseas$pathway)
+#gseas$pathway <- gsub("Reactome|Wp|Kegg", "", gseas$pathway)
+#gseas$pathway <- gsub("^ ", "", gseas$pathway)
 paths2 <- gseas
 y <- setNames(paths2$NES, paths2$pathway)
 # names(y) <- gsub("_", " ", names(y))
@@ -1185,6 +1301,7 @@ sigY <- c(dny,upy)
 ### Define exclusive MRs
 onlyX <- setdiff(sigX,sigY)
 onlyY <- setdiff(sigY, sigX)
+#all <- intersect(sigX, sigY)
 
 ## Identify top 5 in Meth
 topX <- sort(abs(x), decreasing = T)
@@ -1208,6 +1325,17 @@ legend("topright", pch=17, legend = c(paste0("Significant in Meth: ",length(only
                                          paste0("Opposite significance: ", length(both))),
        col = c("blue","green", "orange"),pt.cex=2)
 dev.off()
+
+all2 <- c(onlyX, onlyY, both)
+paths1 <- as.data.frame(paths1)
+rownames(paths1) <- paths1$pathway
+paths1 <- paths1[all2,]
+paths2 <- as.data.frame(paths2)
+rownames(paths2) <- paths2$pathway
+paths2 <- paths2[all2,]
+
+printing <- cbind(paths1[,c(1,3,6)], paths2[,c(1,3,6)])
+write.xlsx(printing, file ="results/GSEA_HIV_Meth_Oxy.xlsx", row.names = F)
 
 ### Table GSEAs
 i <- 1
@@ -1243,10 +1371,10 @@ write.xlsx(dtab,"results/MRs_comparison.xlsx")
 
 # Meth vs. Oxy in WT
 load("results/001_GSEA_WTm_WT_Meth.rda")
-gseas$pathway <- gsub("_", " ", gseas$pathway)
-gseas$pathway <- str_to_title(gseas$pathway)
-gseas$pathway <- gsub("Reactome|Wp|Kegg", "", gseas$pathway)
-gseas$pathway <- gsub("^ ", "", gseas$pathway)
+# gseas$pathway <- gsub("_", " ", gseas$pathway)
+# gseas$pathway <- str_to_title(gseas$pathway)
+# gseas$pathway <- gsub("Reactome|Wp|Kegg", "", gseas$pathway)
+# gseas$pathway <- gsub("^ ", "", gseas$pathway)
 paths1 <- gseas
 x <- setNames(paths1$NES, paths1$pathway)
 # names(x) <- gsub("_", " ", names(x))
@@ -1254,10 +1382,10 @@ x <- setNames(paths1$NES, paths1$pathway)
 # names(x) <- gsub("Reactome|Wp|Kegg", "", names(x))
 # names(x) <- gsub("^ ", "", names(x))
 load("results/001_GSEA_WTm_WT_Oxy.rda")
-gseas$pathway <- gsub("_", " ", gseas$pathway)
-gseas$pathway <- str_to_title(gseas$pathway)
-gseas$pathway <- gsub("Reactome|Wp|Kegg", "", gseas$pathway)
-gseas$pathway <- gsub("^ ", "", gseas$pathway)
+# gseas$pathway <- gsub("_", " ", gseas$pathway)
+# gseas$pathway <- str_to_title(gseas$pathway)
+# gseas$pathway <- gsub("Reactome|Wp|Kegg", "", gseas$pathway)
+# gseas$pathway <- gsub("^ ", "", gseas$pathway)
 paths2 <- gseas
 y <- setNames(paths2$NES, paths2$pathway)
 # names(y) <- gsub("_", " ", names(y))
@@ -1314,4 +1442,48 @@ legend("topright", pch=17, legend = c(paste0("Significant in Meth: ",length(only
                                       paste0("Significant in Oxy: ", length(onlyY)),
                                       paste0("Opposite significance: ", length(both))),
        col = c("blue","green", "orange"),pt.cex=2)
+dev.off()
+
+all2 <- c(onlyX, onlyY, both)
+paths1 <- as.data.frame(paths1)
+rownames(paths1) <- paths1$pathway
+paths1 <- paths1[all2,]
+paths2 <- as.data.frame(paths2)
+rownames(paths2) <- paths2$pathway
+paths2 <- paths2[all2,]
+
+printing <- cbind(paths1[,c(1,3,6)], paths2[,c(1,3,6)])
+write.xlsx(printing, file ="results/GSEA_WT_Meth_Oxy.xlsx", row.names = F)
+
+### Fixed plots
+load("results/000_HIV_WT_Oxy.rda")
+res <- na.omit(res)
+res$pvalue[-log10(res$pvalue) >= 6] <- 0.0000000001
+res <- res[order(res$pvalue),]
+topup <- rownames(res[res$log2FoldChange>=0.5,])[1:20]
+topdn <- rownames(res[res$log2FoldChange<= -0.5,])[1:20]
+top <- c(topup,topdn)
+png("plots/001_volcano_HIV_OXY_vs_WT_OXY_pvaluelimit.png", w=2500,h=2500, res=300)
+EnhancedVolcano(res, #subtitle = "",
+                lab = rownames(res),
+                x = 'log2FoldChange',
+                y = 'pvalue',
+                selectLab = top,
+                xlim = c(-2, 2),
+                #ylim = c(0,12),
+                title = 'HIV + Oxy vs. WT + Oxy',
+                subtitle = " This is wrongly analyzed, because p-values are not controlled for multiple testing! P-adjusted shold be considered",
+                pCutoff = 0.05, #0.05 cutoff
+                FCcutoff = 0.5, # 2-fold change
+                labFace = "bold",
+                labSize = 4,
+                col = c('lightgrey', 'lightblue', 'lightpink', 'salmon'),
+                colAlpha = 4/5,
+                drawConnectors = TRUE,
+                widthConnectors = 0.3,colConnectors = 'gray51',maxoverlapsConnectors = Inf,
+                legendLabSize = 14,
+                legendIconSize = 4.0,
+                caption = paste0('Upregulated = ', nrow(res[res$log2FoldChange>0.5&res$pvalue<=0.05,]), ' genes',"\n",'Downregulated = ',
+                                 nrow(res[res$log2FoldChange< -0.5&res$pvalue<=0.05,]), ' genes'))+
+  theme(plot.title = element_text(hjust = 0.5))
 dev.off()
